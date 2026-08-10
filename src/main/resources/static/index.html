@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RailVoyage - High-Speed Railway Ticket Booking System</title>
+  <meta name="description" content="Seamlessly search trains, check seat availability, book tickets, and manage reservations with RailVoyage.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Header Navigation -->
+  <header class="app-header">
+    <div class="header-container">
+      <a href="#" class="brand-logo" onclick="switchView('trains-view')">
+        <span class="brand-badge">🚆</span>
+        <span>RailVoyage</span>
+      </a>
+
+      <nav class="nav-links">
+        <span class="nav-item active" onclick="switchView('trains-view')">Search Trains</span>
+        <span class="nav-item" onclick="switchView('my-bookings-view')">My Bookings</span>
+        <span id="backend-status-badge" class="role-tag role-user" style="display: flex; align-items: center; gap: 0.3rem;">
+          ⚡ Checking Backend...
+        </span>
+      </nav>
+
+      <div class="user-section">
+        <!-- Admin Buttons (Hidden by default until Admin logs in) -->
+        <button id="nav-admin-btn" class="btn btn-secondary btn-sm" style="display: none;" onclick="openAdminTrainModal()">
+          ➕ Add Train
+        </button>
+        <button id="nav-admin-users-btn" class="btn btn-secondary btn-sm" style="display: none;" onclick="openAdminUsersModal()">
+          👥 Manage Users
+        </button>
+
+        <!-- Logged Out View -->
+        <div id="nav-logged-out" style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-secondary btn-sm" onclick="openModal('auth-modal'); switchAuthTab('login');">Sign In</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('auth-modal'); switchAuthTab('register');">Register</button>
+        </div>
+
+        <!-- Logged In View -->
+        <div id="nav-logged-in" style="display: none; align-items: center; gap: 0.75rem;">
+          <div class="user-badge" style="cursor: pointer;" onclick="openUserProfileModal()" title="Click to view & edit Profile">
+            <div id="nav-user-avatar" class="user-avatar">U</div>
+            <div style="display: flex; flex-direction: column;">
+              <span id="nav-user-name" style="font-weight: 600; font-size: 0.85rem;">User</span>
+              <span id="nav-user-role" class="role-tag role-user">PASSENGER</span>
+            </div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="handleLogout()">Logout</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="main-wrapper">
+
+    <!-- Search & Hero Section -->
+    <section class="hero-section">
+      <h1 class="hero-title">Book Your Journey Across the Country</h1>
+      <p class="hero-subtitle">Fast, seamless, and secure railway ticket reservations with real-time seat tracking and instant boarding pass generation.</p>
+
+      <div class="search-box-card">
+        <form id="train-search-form">
+          <div class="search-grid">
+            <div class="form-group">
+              <label for="search-source">📍 From (Source)</label>
+              <input type="text" id="search-source" class="form-control" placeholder="e.g. Mumbai" />
+            </div>
+
+            <div class="form-group">
+              <label for="search-destination">🎯 To (Destination)</label>
+              <input type="text" id="search-destination" class="form-control" placeholder="e.g. Delhi" />
+            </div>
+
+            <div class="form-group">
+              <label for="search-date">📅 Journey Date</label>
+              <input type="date" id="search-date" class="form-control" />
+            </div>
+
+            <div class="form-group">
+              <label for="search-class">💺 Class</label>
+              <select id="search-class" class="form-control">
+                <option value="ALL">All Classes</option>
+                <option value="1AC">1st AC (1A)</option>
+                <option value="2AC">2nd AC (2A)</option>
+                <option value="3AC">3rd AC (3A)</option>
+                <option value="SL">Sleeper (SL)</option>
+              </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="height: 44px; min-width: 130px;">
+              🔍 Search
+            </button>
+          </div>
+        </form>
+
+        <div class="quick-routes">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Popular Routes:</span>
+          <span class="route-chip" data-src="Mumbai" data-dest="Delhi">Mumbai ➔ Delhi</span>
+          <span class="route-chip" data-src="Bengaluru" data-dest="Chennai">Bengaluru ➔ Chennai</span>
+          <span class="route-chip" data-src="Hyderabad" data-dest="Goa">Hyderabad ➔ Goa</span>
+          <span class="route-chip" data-src="Kolkata" data-dest="Patna">Kolkata ➔ Patna</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 1: Available Trains Section -->
+    <section id="trains-view" class="view-section active-view">
+      <div class="section-header">
+        <h2 class="section-title">🚆 Available Trains</h2>
+        <button class="btn btn-secondary btn-sm" onclick="handleSearchTrains()">🔄 Refresh</button>
+      </div>
+
+      <div id="train-cards-container" class="train-list-grid">
+        <!-- Train cards populated dynamically -->
+      </div>
+    </section>
+
+    <!-- VIEW 2: My Bookings Section -->
+    <section id="my-bookings-view" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">🎟️ My Bookings & Tickets</h2>
+        <button class="btn btn-secondary btn-sm" onclick="loadMyBookings()">🔄 Reload</button>
+      </div>
+
+      <div id="my-bookings-container" class="train-list-grid">
+        <!-- User's bookings rendered dynamically -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: Authentication (Login / Register) -->
+  <div id="auth-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Account Portal</h3>
+        <button class="btn-close" onclick="closeModal('auth-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="auth-tabs">
+          <div id="tab-login" class="auth-tab active" onclick="switchAuthTab('login')">Sign In</div>
+          <div id="tab-register" class="auth-tab" onclick="switchAuthTab('register')">Register</div>
+        </div>
+
+        <form id="auth-form" data-mode="login">
+          <div class="form-group register-field" style="display: none; margin-bottom: 1rem;">
+            <label for="auth-name">Full Name</label>
+            <input type="text" id="auth-name" class="form-control" placeholder="John Doe" />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="auth-email">Email Address</label>
+            <input type="email" id="auth-email" class="form-control" placeholder="user@example.com" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="auth-password">Password</label>
+            <input type="password" id="auth-password" class="form-control" placeholder="••••••••" required />
+          </div>
+
+          <div class="form-group register-field" style="display: none; margin-bottom: 1.5rem;">
+            <label for="auth-phone">Phone Number (10 Digits)</label>
+            <input type="tel" id="auth-phone" class="form-control" placeholder="9876543210" pattern="[0-9]{10}" />
+          </div>
+
+          <button type="submit" id="auth-submit-btn" class="btn btn-primary" style="width: 100%;">Sign In</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Booking Reservation -->
+  <div id="booking-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Reserve Seats</h3>
+        <button class="btn-close" onclick="closeModal('booking-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: rgba(255, 255, 255, 0.04); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; border: 1px solid var(--border-light);">
+          <h4 id="book-train-name" style="color: var(--accent-cyan); margin-bottom: 0.25rem;">Train Name</h4>
+          <p id="book-train-route" style="font-size: 0.9rem; color: var(--text-muted);">Route Info</p>
+          <span id="book-available-seats" class="role-tag role-user" style="margin-top: 0.5rem; display: inline-block;">0 Seats</span>
+        </div>
+
+        <form id="booking-form">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="book-date">📅 Journey Date</label>
+            <input type="date" id="book-date" class="form-control" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="book-coach">🚂 Select Preferred Coach</label>
+            <select id="book-coach" class="form-control" onchange="updateSeatOptions()">
+              <option value="S1">S1 (Sleeper Class)</option>
+              <option value="S2">S2 (Sleeper Class)</option>
+              <option value="B1">B1 (3rd AC)</option>
+              <option value="B2">B2 (3rd AC)</option>
+              <option value="A1">A1 (2nd AC)</option>
+              <option value="H1">H1 (1st AC)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="book-seat-number">💺 Select Preferred Seat / Berth</label>
+            <select id="book-seat-number" class="form-control" onchange="toggleCustomSeatInput()">
+              <option value="12 (Lower Berth / Window)">Seat 12 (Lower Berth / Window)</option>
+              <option value="15 (Middle Berth)">Seat 15 (Middle Berth)</option>
+              <option value="18 (Upper Berth)">Seat 18 (Upper Berth)</option>
+              <option value="24 (Side Lower)">Seat 24 (Side Lower)</option>
+              <option value="32 (Side Upper)">Seat 32 (Side Upper)</option>
+              <option value="45 (Lower Berth / Window)">Seat 45 (Lower Berth / Window)</option>
+              <option value="CUSTOM">Type Custom Seat Number...</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="custom-seat-group" style="display: none; margin-bottom: 1rem;">
+            <label for="book-custom-seat">Custom Seat Number</label>
+            <input type="text" id="book-custom-seat" class="form-control" placeholder="e.g. S1-72" />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="book-seats">👥 Number of Passengers / Seats</label>
+            <input type="number" id="book-seats" class="form-control" min="1" max="6" value="1" oninput="updateBookingPrice()" required />
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(99, 102, 241, 0.1); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-active); margin-bottom: 1.5rem;">
+            <span style="font-weight: 600;">Total Estimated Fare:</span>
+            <span id="book-price" style="font-size: 1.4rem; font-weight: 800; color: var(--accent-emerald);">₹450</span>
+          </div>
+
+          <button type="submit" class="btn btn-success" style="width: 100%;">Proceed to Payment ➔</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Payment Gateway -->
+  <div id="payment-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Secure Checkout</h3>
+        <button class="btn-close" onclick="closeModal('payment-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <span style="font-size: 0.9rem; color: var(--text-muted);">Payment Amount</span>
+          <h2 id="pay-amount" style="font-size: 2.2rem; color: var(--accent-emerald); font-weight: 800; margin-top: 0.2rem;">₹450</h2>
+        </div>
+
+        <form id="payment-form">
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label for="pay-mode">Select Payment Method</label>
+            <select id="pay-mode" class="form-control">
+              <option value="UPI">UPI / GooglePay / PhonePe</option>
+              <option value="CREDIT_CARD">Credit Card</option>
+              <option value="DEBIT_CARD">Debit Card</option>
+              <option value="NET_BANKING">Net Banking</option>
+              <option value="CASH">Cash / Counter</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-success" style="width: 100%;">Pay Now & Issue Ticket</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: E-Ticket Modal -->
+  <div id="ticket-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3>Your Official Boarding Pass</h3>
+        <button class="btn-close" onclick="closeModal('ticket-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="ticket-modal-body">
+        <!-- Ticket Card Content rendered dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('ticket-modal')">Close</button>
+        <button class="btn btn-primary" onclick="printTicket()">🖨️ Print / Save Ticket</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: Admin Add/Edit Train Modal -->
+  <div id="admin-train-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="admin-train-title">Add New Train</h3>
+        <button class="btn-close" onclick="closeModal('admin-train-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="admin-train-form">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="admin-train-number">Train Number</label>
+            <input type="number" id="admin-train-number" class="form-control" placeholder="e.g. 12951" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="admin-train-name">Train Name</label>
+            <input type="text" id="admin-train-name" class="form-control" placeholder="Rajdhani Express" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="admin-train-source">Source Station</label>
+            <input type="text" id="admin-train-source" class="form-control" placeholder="Mumbai" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="admin-train-dest">Destination Station</label>
+            <input type="text" id="admin-train-dest" class="form-control" placeholder="Delhi" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="admin-train-total-seats">Total Seats</label>
+            <input type="number" id="admin-train-total-seats" class="form-control" placeholder="200" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label for="admin-train-avail-seats">Available Seats</label>
+            <input type="number" id="admin-train-avail-seats" class="form-control" placeholder="200" required />
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Save Train Details</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 6: Admin View All Users Modal -->
+  <div id="admin-users-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 750px;">
+      <div class="modal-header">
+        <h3>👥 All Registered System Users</h3>
+        <button class="btn-close" onclick="closeModal('admin-users-modal')">&times;</button>
+      </div>
+      <div class="modal-body" style="overflow-x: auto;">
+        <table class="user-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border-light); color: var(--text-muted);">
+              <th style="padding: 0.75rem;">ID</th>
+              <th style="padding: 0.75rem;">Name</th>
+              <th style="padding: 0.75rem;">Email</th>
+              <th style="padding: 0.75rem;">Phone</th>
+              <th style="padding: 0.75rem;">Role</th>
+              <th style="padding: 0.75rem;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="admin-users-table-body">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('admin-users-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 7: User Profile & Update Settings Modal -->
+  <div id="user-profile-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>👤 My Account Profile & Settings</h3>
+        <button class="btn-close" onclick="closeModal('user-profile-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align: center; margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+          <div id="profile-avatar" class="user-avatar" style="width: 55px; height: 55px; font-size: 1.5rem; margin: 0 auto 0.5rem;">U</div>
+          <h4 id="profile-display-name" style="font-size: 1.2rem; font-weight: 700;">User Name</h4>
+          <span id="profile-display-role" class="role-tag role-user" style="display: inline-block; margin-top: 0.25rem;">PASSENGER</span>
+          <p id="profile-display-id" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem;">User ID: #1</p>
+        </div>
+
+        <form id="user-profile-form">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="profile-name">Full Name</label>
+            <input type="text" id="profile-name" class="form-control" placeholder="John Doe" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="profile-email">Email Address</label>
+            <input type="email" id="profile-email" class="form-control" placeholder="user@example.com" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="profile-phone">Phone Number (10 Digits)</label>
+            <input type="tel" id="profile-phone" class="form-control" placeholder="9876543210" pattern="[0-9]{10}" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label for="profile-password">New Password (Leave blank to keep existing)</label>
+            <input type="password" id="profile-password" class="form-control" placeholder="••••••••" />
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%;">💾 Save Profile Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
