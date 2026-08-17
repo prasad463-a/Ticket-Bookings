@@ -13,11 +13,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.ToString;
 
 @Entity
 @Data
+@Table(name = "users")
 //@Table(name = "users") // Maps this Java class to a table named 'users' in MySQL
 public class User {
 
