@@ -5,8 +5,8 @@
 
 // Configuration & API Helper
 const CONFIG = {
-  // Use relative API path if served on Spring Boot, or fallback to port 8080
-  API_BASE_URL: window.location.origin.includes('8080') ? window.location.origin : 'http://localhost:8080',
+  // Dynamically use current origin (works seamlessly on localhost:8080 and online host like Render)
+  API_BASE_URL: window.location.origin,
   STORAGE_TOKEN: 'railvoyage_token',
   STORAGE_USER: 'railvoyage_user'
 };
