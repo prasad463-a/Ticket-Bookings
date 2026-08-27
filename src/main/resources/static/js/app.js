@@ -902,12 +902,27 @@ async function deleteUser(userId) {
 function switchView(viewId) {
   document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active-view'));
   document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-item').forEach(nav => nav.classList.remove('active'));
 
   const activeView = document.getElementById(viewId);
   if (activeView) activeView.classList.add('active-view');
 
-  if (viewId === 'my-bookings-view') {
+  if (viewId === 'trains-view') {
+    const mobTab = document.getElementById('mob-nav-trains');
+    if (mobTab) mobTab.classList.add('active');
+  } else if (viewId === 'my-bookings-view') {
+    const mobTab = document.getElementById('mob-nav-bookings');
+    if (mobTab) mobTab.classList.add('active');
     loadMyBookings();
+  }
+}
+
+function handleMobileProfileTab() {
+  if (state.user) {
+    openUserProfileModal();
+  } else {
+    openModal('auth-modal');
+    switchAuthTab('login');
   }
 }
 
