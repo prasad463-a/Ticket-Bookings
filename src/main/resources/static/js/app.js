@@ -925,3 +925,39 @@ function closeModal(modalId) {
 function printTicket() {
   window.print();
 }
+
+// Toggle Desktop / Mobile View Mode
+function toggleDesktopMode() {
+  const isDesktop = document.body.classList.toggle('desktop-mode');
+  const viewportMeta = document.querySelector('meta[name="viewport"]');
+  const btn = document.getElementById('desktop-toggle-btn');
+  
+  if (isDesktop) {
+    if (viewportMeta) viewportMeta.setAttribute('content', 'width=1200, initial-scale=0.3');
+    if (btn) btn.innerHTML = '📱 Mobile View';
+    localStorage.setItem('railvoyage_desktop_mode', 'true');
+    showToast('Switched to Desktop View mode', 'info');
+  } else {
+    if (viewportMeta) viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0');
+    if (btn) btn.innerHTML = '💻 Desktop View';
+    localStorage.setItem('railvoyage_desktop_mode', 'false');
+    showToast('Switched to Mobile Responsive view', 'info');
+  }
+}
+
+// Restore Saved Desktop Mode Preference on Load
+function restoreDesktopModePref() {
+  const savedPref = localStorage.getItem('railvoyage_desktop_mode');
+  if (savedPref === 'true') {
+    document.body.classList.add('desktop-mode');
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (viewportMeta) viewportMeta.setAttribute('content', 'width=1200, initial-scale=0.3');
+    const btn = document.getElementById('desktop-toggle-btn');
+    if (btn) btn.innerHTML = '📱 Mobile View';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  restoreDesktopModePref();
+});
+

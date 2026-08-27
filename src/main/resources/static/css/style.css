@@ -827,3 +827,91 @@ select.form-control option {
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   Mobile Responsiveness & Desktop Mode Toggle
+   ========================================================================== */
+
+/* Mobile Responsive Adjustments (< 768px) */
+@media screen and (max-width: 768px) {
+  body:not(.desktop-mode) .header-container {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+
+  body:not(.desktop-mode) .nav-links {
+    order: 3;
+    width: 100%;
+    justify-content: space-around;
+    border-top: 1px solid var(--border-light);
+    padding-top: 0.5rem;
+  }
+
+  body:not(.desktop-mode) .user-section {
+    margin-left: auto;
+    gap: 0.5rem;
+  }
+
+  body:not(.desktop-mode) .search-box-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  body:not(.desktop-mode) .trains-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  body:not(.desktop-mode) .modal-container {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 1rem auto;
+    padding: 1.25rem !important;
+  }
+
+  body:not(.desktop-mode) .seat-class-picker {
+    grid-template-columns: 1fr !important;
+  }
+
+  body:not(.desktop-mode) .booking-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+  }
+
+  body:not(.desktop-mode) .ticket-card {
+    width: 100% !important;
+  }
+
+  body:not(.desktop-mode) .main-content {
+    padding: 1rem 0.75rem !important;
+  }
+
+  body:not(.desktop-mode) .user-badge {
+    padding: 0.25rem 0.5rem !important;
+  }
+}
+
+/* Desktop Mode Override (Forces Full Desktop View on Mobile Phones) */
+body.desktop-mode {
+  min-width: 1200px !important;
+  overflow-x: auto !important;
+}
+
+body.desktop-mode .app-header {
+  min-width: 1200px !important;
+}
+
+body.desktop-mode main.main-content {
+  width: 1200px !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+}
+
+body.desktop-mode .search-box-grid {
+  grid-template-columns: repeat(4, 1fr) !important;
+}
+
+body.desktop-mode .trains-grid {
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)) !important;
+}
+
